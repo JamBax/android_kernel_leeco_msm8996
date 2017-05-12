@@ -85,6 +85,15 @@ config MACH_LEECO_ZL1
 
 	  If unsure, you're the expert. Otherwise, always say N.
 
+config MACH_X2
+	select MACH_LEECO_MSM8996
+        select IR_MAXQ616
+        select SND_SOC_MAX98927
+        select BACKLIGHT_LM3697
+	bool "x2"
+	help
+	  Support for the x2 variant
+
 config MACH_LEECO_ZL1_OEM
 	depends on MACH_LEECO_ZL1
 	bool "OEM extensions for the Le Pro 3 (ZL1)"
