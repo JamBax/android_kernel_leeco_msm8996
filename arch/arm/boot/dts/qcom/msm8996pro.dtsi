@@ -1458,7 +1458,7 @@
 
 &soc {
 	qcom,msm-thermal {
-		qcom,poll-ms = <50>;
+		qcom,poll-ms = <100>;
 		qcom,limit-temp = <50>;
 		qcom,core-limit-temp = <50>;
 		msm_thermal_freq: qcom,vdd-apps-rstr {

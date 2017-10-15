@@ -65,7 +65,7 @@
 				qcom,min-child-idx = <1>;
 			};
 			qcom,pm-cluster-level@2{ /* E4-M3 */
-				reg = <1>;
+				reg = <2>;
 				label = "system-fpc";
 				qcom,spm-cbf-mode = "fpc";
 				qcom,spm-l3-mode = "fpc";
@@ -118,10 +118,11 @@
 					qcom,latency-us = <700>;
 					qcom,ss-power = <160>;
 					qcom,energy-overhead = <441000>;
-					qcom,time-overhead = <1000>;
+					qcom,time-overhead = <360>;
 					qcom,min-child-idx = <2>;
 					qcom,is-reset;
 				};
+
 
 				qcom,pm-cpu {
 					#address-cells = <1>;
@@ -205,7 +206,6 @@
 					qcom,min-child-idx = <2>;
 					qcom,is-reset;
 				};
-
 				qcom,pm-cpu {
 					#address-cells = <1>;
 					#size-cells = <0>;
