@@ -385,7 +385,7 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 		else if (desc->action && desc->action->name)
 			name = desc->action->name;
 
-		pr_warn("%s: %d triggered %s\n", __func__, irq, name);
+		pr_warn("%s_v3: %d (%d) triggered %s\n", __func__, irq, i, name);
 	}
 }
 
@@ -750,10 +750,17 @@ int gic_set_wake(struct irq_data *d, unsigned int on)
 	reg_offset = gicirq / 32;
 	bit_offset = gicirq % 32;
 
+	pr_err("mpm: gic_set_wake %d -> %d\n",gicirq, on);
+	if( gicirq == 200 || gicirq == 240 /*|| gicirq == 203 || gicirq == 481 || gicirq == 365 */) {
+	    on = 0;
+	    pr_err("mpm: gic_set_wake %d -> %d\n",gicirq, on);
+	}
+
 	if (on)
 		gic_data->wakeup_irqs[reg_offset] |=  1 << bit_offset;
 	else
 		gic_data->wakeup_irqs[reg_offset] &=  ~(1 << bit_offset);
+
 
 	if (gic_arch_extn.irq_set_wake)
 		ret = gic_arch_extn.irq_set_wake(d, on);
