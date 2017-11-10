@@ -52,12 +52,18 @@ static void try_to_suspend(struct work_struct *work)
 	if (!pm_get_wakeup_count(&final_count, false))
 		goto out;
 
+
+	pr_err("PM: Wakeup initial=%u, final=%u\n", initial_count, final_count);
+
 	/*
 	 * If the wakeup occured for an unknown reason, wait to prevent the
 	 * system from trying to suspend and waking up in a tight loop.
 	 */
-	if (final_count == initial_count)
-		schedule_timeout_uninterruptible(HZ / 2);
+	if (final_count == initial_count) {
+		pr_err("PM: Unknown wakeup reason. Sleeping uninterruptable.\n");
+		//schedule_timeout_uninterruptible(HZ / 2);
+		schedule_timeout_uninterruptible(msecs_to_jiffies(1000) + 1);
+	}
 
  out:
 	queue_up_suspend_work();
