@@ -651,7 +651,7 @@ static int parse_cpu_mode(struct device_node *n, struct lpm_cpu_level *l)
 	key = "qcom,spm-cpu-mode";
 	ret  =  of_property_read_string(n, key, &l->name);
 	if (ret) {
-		pr_err("Failed %s %d\n", n->name, __LINE__);
+		pr_err("PM: Failed %s %d\n", n->name, __LINE__);
 		return ret;
 	}
 
@@ -660,7 +660,7 @@ static int parse_cpu_mode(struct device_node *n, struct lpm_cpu_level *l)
 
 		ret = of_property_read_u32(n, key, &l->psci_id);
 		if (ret) {
-			pr_err("Failed reading %s on device %s\n", key,
+			pr_err("PM: Failed reading %s on device %s\n", key,
 					n->name);
 			return ret;
 		}
@@ -685,7 +685,7 @@ static int get_cpumask_for_node(struct device_node *node, struct cpumask *mask)
 
 	cpu_node = of_parse_phandle(node, "qcom,cpu", idx++);
 	if (!cpu_node) {
-		pr_info("%s: No CPU phandle, assuming single cluster\n",
+		pr_info("PM: %s: No CPU phandle, assuming single cluster\n",
 				node->full_name);
 		/*
 		 * Not all targets have the cpu node populated in the device
@@ -720,7 +720,7 @@ static int calculate_residency(struct power_params *base_pwr,
 	residency /= (int32_t)(base_pwr->ss_power  - next_pwr->ss_power);
 
 	if (residency < 0) {
-		pr_err("%s: residency < 0 for LPM\n",
+		pr_err("PM: %s: residency < 0 for LPM\n",
 				__func__);
 		return next_pwr->time_overhead_us;
 	}
@@ -747,7 +747,7 @@ static int parse_cpu_levels(struct device_node *node, struct lpm_cluster *c)
 
 		ret = of_property_read_u32(node, key, &c->cpu->psci_mode_shift);
 		if (ret) {
-			pr_err("Failed reading %s on device %s\n", key,
+			pr_err("PM: Failed reading %s on device %s\n", key,
 					node->name);
 			return ret;
 		}
@@ -755,7 +755,7 @@ static int parse_cpu_levels(struct device_node *node, struct lpm_cluster *c)
 
 		ret = of_property_read_u32(node, key, &c->cpu->psci_mode_mask);
 		if (ret) {
-			pr_err("Failed reading %s on device %s\n", key,
+			pr_err("PM: Failed reading %s on device %s\n", key,
 					node->name);
 			return ret;
 		}
@@ -767,7 +767,7 @@ static int parse_cpu_levels(struct device_node *node, struct lpm_cluster *c)
 
 		ret = parse_cpu_mode(n, l);
 		if (ret < 0) {
-			pr_info("Failed %s\n", l->name);
+			pr_info("PM: Failed %s\n", l->name);
 			goto failed;
 		}
 
@@ -801,7 +801,7 @@ static int parse_cpu_levels(struct device_node *node, struct lpm_cluster *c)
 				calculate_residency(&c->cpu->levels[i].pwr,
 					&c->cpu->levels[j].pwr);
 
-			pr_err("%s: idx %d %u\n", __func__, j,
+			pr_err("PM: %s: idx %d (%d) %u\n", __func__, j, i,
 					c->cpu->levels[i].pwr.residencies[j]);
 		}
 	}
@@ -814,7 +814,7 @@ failed:
 	}
 	kfree(c->cpu);
 	c->cpu = NULL;
-	pr_err("%s(): Failed with error code:%d\n", __func__, ret);
+	pr_err("PM: %s(): Failed with error code:%d\n", __func__, ret);
 	return ret;
 }
 
@@ -952,13 +952,13 @@ struct lpm_cluster *parse_cluster(struct device_node *node,
 	return c;
 
 failed_parse_cluster:
-	pr_err("Failed parse cluster:%s\n", key);
+	pr_err("PM: Failed parse cluster:%s\n", key);
 	if (parent)
 		list_del(&c->list);
 	free_cluster_node(c);
 failed_parse_params:
 	c->parent = NULL;
-	pr_err("Failed parse params\n");
+	pr_err("PM: Failed parse params\n");
 	kfree(c);
 	return NULL;
 }
@@ -970,7 +970,7 @@ struct lpm_cluster *lpm_of_parse_cluster(struct platform_device *pdev)
 
 	top = of_find_node_by_name(pdev->dev.of_node, "qcom,pm-cluster");
 	if (!top) {
-		pr_err("Failed to find root node\n");
+		pr_err("PM: Failed to find root node\n");
 		return ERR_PTR(-ENODEV);
 	}
 
@@ -994,16 +994,16 @@ void cluster_dt_walkthrough(struct lpm_cluster *cluster)
 
 	for (i = 0; i < cluster->nlevels; i++) {
 		struct lpm_cluster_level *l = &cluster->levels[i];
-		pr_info("%d ndevices:%d\n", __LINE__, cluster->ndevices);
+		pr_info("PM: %d ndevices:%d\n", __LINE__, cluster->ndevices);
 		for (j = 0; j < cluster->ndevices; j++)
-			pr_info("%sDevice: %p id:%p\n", str,
+			pr_info("PM: %sDevice: %p id:%p\n", str,
 					&cluster->name[j], &l->mode[i]);
 	}
 
 	if (cluster->cpu) {
-		pr_info("%d\n", __LINE__);
+		pr_info("PM: %d\n", __LINE__);
 		for (j = 0; j < cluster->cpu->nlevels; j++)
-			pr_info("%s\tCPU mode: %s id:%d\n", str,
+			pr_info("PM: %s\tCPU mode: %s id:%d\n", str,
 					cluster->cpu->levels[j].name,
 					cluster->cpu->levels[j].mode);
 	}
@@ -1013,7 +1013,7 @@ void cluster_dt_walkthrough(struct lpm_cluster *cluster)
 
 	list_for_each(list, &cluster->child) {
 		struct lpm_cluster *n;
-		pr_info("%d\n", __LINE__);
+		pr_info("PM: %d\n", __LINE__);
 		n = list_entry(list, typeof(*n), list);
 		cluster_dt_walkthrough(n);
 	}
