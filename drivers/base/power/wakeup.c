@@ -20,29 +20,29 @@
 
 #include "power.h"
 
-static bool enable_wlan_rx_wake_ws = false;
+static bool enable_wlan_rx_wake_ws = true;
 module_param(enable_wlan_rx_wake_ws, bool, 0644);
-static bool enable_wlan_ctrl_wake_ws = false;
+static bool enable_wlan_ctrl_wake_ws = true;
 module_param(enable_wlan_ctrl_wake_ws, bool, 0644);
-static bool enable_wlan_wake_ws = false;
+static bool enable_wlan_wake_ws = true;
 module_param(enable_wlan_wake_ws, bool, 0644);
-static bool enable_qcom_rx_wakelock_ws = false;
+static bool enable_qcom_rx_wakelock_ws = true;
 module_param(enable_qcom_rx_wakelock_ws, bool, 0644);
 static bool enable_wlan_extscan_wl_ws = false;
 module_param(enable_wlan_extscan_wl_ws, bool, 0644);
-static bool enable_wlan_wow_wl_ws = false;
+static bool enable_wlan_wow_wl_ws = true;
 module_param(enable_wlan_wow_wl_ws, bool, 0644);
-static bool enable_bluedroid_timer_ws = false;
+static bool enable_bluedroid_timer_ws = true;
 module_param(enable_bluedroid_timer_ws, bool, 0644);
-static bool enable_ipa_ws = false;
+static bool enable_ipa_ws = true;
 module_param(enable_ipa_ws, bool, 0644);
-static bool enable_wlan_ws = false;
+static bool enable_wlan_ws = true;
 module_param(enable_wlan_ws, bool, 0644);
-static bool enable_timerfd_ws = false;
+static bool enable_timerfd_ws = true;
 module_param(enable_timerfd_ws, bool, 0644);
-static bool enable_netlink_ws = false;
+static bool enable_netlink_ws = true;
 module_param(enable_netlink_ws, bool, 0644);
-static bool enable_netmgr_wl_ws = false;
+static bool enable_netmgr_wl_ws = true;
 module_param(enable_netmgr_wl_ws, bool, 0644);
 
 /*
@@ -52,17 +52,35 @@ module_param(enable_netmgr_wl_ws, bool, 0644);
 static bool enable_qpnp_fg_update_sram_ws = false;
 module_param(enable_qpnp_fg_update_sram_ws, bool, 0644);
 
+static bool enable_qpnp_fg_update_temp_ws = false;
+module_param(enable_qpnp_fg_update_temp_ws, bool, 0644);
+
 static bool enable_qpnp_fg_memaccess_ws = false;
 module_param(enable_qpnp_fg_memaccess_ws, bool, 0644);
 
 static bool enable_sensors_qcom_ws = false;
 module_param(enable_sensors_qcom_ws, bool, 0644);
 
-static bool enable_dsps_IPCRTR_ws = false;
+static bool enable_qbt_ws = true;
+module_param(enable_qbt_ws, bool, 0644);
+
+static bool enable_rc0_pcie_ws = true;
+module_param(enable_rc0_pcie_ws, bool, 0644);
+
+static bool enable_rc1_pcie_ws = true;
+module_param(enable_rc1_pcie_ws, bool, 0644);
+
+static bool enable_dsps_IPCRTR_ws = true;
 module_param(enable_dsps_IPCRTR_ws, bool, 0644);
 
+static bool enable_FLP_srv_ws = false;
+module_param(enable_FLP_srv_ws, bool, 0644);
 
+static bool enable_battery_ws = false;
+module_param(enable_battery_ws, bool, 0644);
 
+static bool enable_usb_ws = false;
+module_param(enable_usb_ws, bool, 0644);
 
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
@@ -495,6 +513,7 @@ static void wakeup_source_deactivate(struct wakeup_source *ws)
 
 static bool wakeup_source_blocker(struct wakeup_source *ws)
 {
+
 	unsigned int wslen = 0;
 
 	if (ws) {
@@ -519,6 +538,8 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				!strncmp(ws->name, "wlan_rx_wake", wslen)) ||
 			(!enable_qpnp_fg_update_sram_ws &&
 				!strncmp(ws->name, "qpnp_fg_update_sram", wslen)) ||
+			(!enable_qpnp_fg_update_temp_ws &&
+				!strncmp(ws->name, "qpnp_fg_update_temp", wslen)) ||
 			(!enable_qpnp_fg_memaccess_ws &&
 				!strncmp(ws->name, "qpnp_fg_memaccess", wslen)) ||
 			(!enable_dsps_IPCRTR_ws &&
@@ -529,6 +550,18 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				!strncmp(ws->name, "bluedroid_timer", wslen)) ||
 			(!enable_wlan_wow_wl_ws &&
 				!strncmp(ws->name, "wlan_wow_wl", wslen)) ||	
+			(!enable_qbt_ws &&
+				!strncmp(ws->name, "qbt_wake_source", wslen)) ||	
+			(!enable_rc0_pcie_ws &&
+				!strncmp(ws->name, "RC0 pcie_wakeup_source", wslen)) ||	
+			(!enable_rc1_pcie_ws &&
+				!strncmp(ws->name, "RC1 pcie_wakeup_source", wslen)) ||	
+			(!enable_FLP_srv_ws &&
+				!(strstr(ws->name, "FLP") == NULL) ) ||
+			(!enable_battery_ws &&
+				!strncmp(ws->name, "battery", wslen)) ||	
+			(!enable_usb_ws &&
+				!strncmp(ws->name, "usb", wslen)) ||	
 			(!enable_wlan_ctrl_wake_ws &&
 				!strncmp(ws->name, "wlan_ctrl_wake", wslen))) {
 			if (ws->active) {
@@ -536,7 +569,6 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				pr_info("forcefully deactivate wakeup source: %s\n",
 					ws->name);
 			}
-
 			return true;
 		}
 	}
