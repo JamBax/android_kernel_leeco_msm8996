@@ -187,6 +187,7 @@
 	/delete-node/ flash_led;
 
 	sound-9335 {
+		compatible = "qcom,msm8996-asoc-snd-tasha"; 
 		qcom,model = "msm8996-tasha-mtp-snd-card";
 
 		qcom,audio-routing =
@@ -429,7 +430,7 @@
 /{
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
-		#include "batterydata-max-plus-3395mah.dtsi"
+		#include "batterydata-le-x2-3200mah.dtsi"
 	};
 };
 

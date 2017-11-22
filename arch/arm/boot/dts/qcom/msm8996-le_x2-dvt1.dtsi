@@ -179,6 +179,7 @@
 	/delete-node/ flash_led;
 
 	sound-9335 {
+		compatible = "qcom,msm8996-asoc-snd-tasha"; 
 		qcom,model = "msm8996-tasha-mtp-snd-card";
 
 		qcom,audio-routing =
@@ -405,6 +406,21 @@
 	};
 };
 
+/{
+	qrd_batterydata: qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "batterydata-le-x2-3200mah.dtsi"
+	};
+};
+
+/{
+	qcom,battery-data {
+		qcom,batt-id-range-pct = <15>;
+		#include "batterydata-le-x2-3200mah.dtsi"
+	};
+};
+
+
 &pmi8994_charger {
 	qcom,float-voltage-mv = <4400>;
 	qcom,fastchg-current-ma = <4000>;
@@ -416,14 +432,14 @@
 
 &pmi8994_fg {
 	qcom,cold-bat-decidegc = <0>;
-	qcom,cool-bat-decidegc = <150>;
+	qcom,cool-bat-decidegc = <100>;
         qcom,warm-bat-decidegc = <450>;
 	qcom,hot-bat-decidegc = <500>;
         qcom,fg-cc-cv-threshold-mv = <4390>;
         qcom,fg-iterm-ma = <200>;
         qcom,fg-chg-iterm-ma = <80>;
-        qcom,fg-cutoff-voltage-mv = <3320>;
-        qcom,irq-volt-empty-mv = <3300>;
+        qcom,fg-cutoff-voltage-mv = <3220>;
+        qcom,irq-volt-empty-mv = <3200>;
 };
 
 &uartblsp2dm1 {

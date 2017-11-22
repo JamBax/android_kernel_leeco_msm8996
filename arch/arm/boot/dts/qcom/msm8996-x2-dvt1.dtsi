@@ -331,6 +331,7 @@
 	mtp_batterydata: qcom,battery-data {
 		qcom,batt-id-range-pct = <15>;
 		#include "batterydata-max-plus-3395mah.dtsi"
+		#include "batterydata-le-x2-3200mah.dtsi"
 	};
 };
 

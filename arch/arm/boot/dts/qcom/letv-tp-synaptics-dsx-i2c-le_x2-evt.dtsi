@@ -39,20 +39,26 @@
 			/*status = "disabled";*/
 			interrupt-parent = <&tlmm>;
 			interrupts = <125 0x2008>;
-			/*vdd_ana-supply = <&pm8994_l14>;*/
-			/*vcc_i2c-supply = <&pm8994_l14>;*/
-			/*synaptics,pwr-reg-name = "vdd_ana";*/
-			/*synaptics,bus-reg-name = "vcc_i2c";*/
+			pinctrl-names = "pmx_ts_active","pmx_ts_suspend";
+			pinctrl-0 = <&synaptics_irq_active>; /* &synaptics_reset_active>;*/
+			pinctrl-1 = <&synaptics_irq_suspend>; /* &synaptics_reset_suspend>;*/
+			vdd_ana-supply = <&pm8994_l22>;
+			vcc_i2c-supply = <&pm8994_l14>;
+			synaptics,pwr-reg-name = "vdd_ana";
+			synaptics,bus-reg-name = "vcc_i2c";
 			synaptics,reset-gpio = <&tlmm 89 0x00>;
-			synaptics,irq-gpio = <&tlmm 125 0x2008>;
+			synaptics,irq-gpio = <&tlmm 125 0x0>;
 			synaptics,irq-on-state = <0>;
-			synaptics,irq-flags = <0x2008>; /* IRQF_ONESHOT | IRQF_TRIGGER_LOW */
+			synaptics,irq-flags = <0x2008>;  /*IRQF_ONESHOT | IRQF_TRIGGER_LOW */
 			synaptics,power-delay-ms = <200>;
 			synaptics,reset-delay-ms = <200>;
 			synaptics,reset-on-state = <0>;
 			synaptics,reset-active-ms = <20>;
+			/*synaptics,disable-gpios;*/
+
 			/* uncomment and update line below as appropriate if there are 0D buttons */
 			synaptics,cap-button-codes = <158 0x244 172>;
+
 			/* uncomment and update lines below as appropriate if there are virtual buttons */
 			/* synaptics,vir-button-codes = <102 100 900 100 60 158 300 900 100 60>; */
 			/* synaptics,max-y-for-2d = <800>; */

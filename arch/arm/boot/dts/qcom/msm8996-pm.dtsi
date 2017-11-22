@@ -63,6 +63,7 @@
 				qcom,energy-overhead = <69000>;
 				qcom,time-overhead = <150>;
 				qcom,min-child-idx = <1>;
+				qcom,reset-level = <1>;
 			};
 			qcom,pm-cluster-level@2{ /* E4-M3 */
 				reg = <2>;
@@ -77,6 +78,7 @@
 				qcom,min-child-idx = <2>;
 				qcom,notify-rpm;
 				qcom,is-reset;
+				qcom,reset-level = <3>;
 			};
 
 			qcom,pm-cluster@0{
@@ -109,6 +111,7 @@
 					qcom,energy-overhead = <89070>;
 					qcom,time-overhead = <180>;
 					qcom,min-child-idx = <2>;
+					qcom,reset-level = <2>;
 				};
 
 				qcom,pm-cluster-level@2{ /* D4 */
@@ -118,9 +121,10 @@
 					qcom,latency-us = <700>;
 					qcom,ss-power = <160>;
 					qcom,energy-overhead = <441000>;
-					qcom,time-overhead = <360>;
+					qcom,time-overhead = <1000>;
 					qcom,min-child-idx = <2>;
 					qcom,is-reset;
+					qcom,reset-level = <3>;
 				};
 
 
@@ -159,6 +163,7 @@
 						qcom,ss-power = <196>;
 						qcom,energy-overhead = <45300>;
 						qcom,time-overhead = <210>;
+						qcom,reset-level = <3>;
 					};
 				};
 			};
@@ -193,6 +198,7 @@
 					qcom,energy-overhead = <83500>;
 					qcom,time-overhead = <180>;
 					qcom,min-child-idx = <2>;
+					qcom,reset-level = <2>;
 				};
 
 				qcom,pm-cluster-level@2{ /* D4 */
@@ -205,6 +211,7 @@
 					qcom,time-overhead = <1000>;
 					qcom,min-child-idx = <2>;
 					qcom,is-reset;
+					qcom,reset-level = <3>;
 				};
 				qcom,pm-cpu {
 					#address-cells = <1>;
@@ -241,6 +248,7 @@
 						qcom,ss-power = <196>;
 						qcom,energy-overhead = <45300>;
 						qcom,time-overhead = <210>;
+						qcom,reset-level = <3>;
 					};
 				};
 			};
@@ -263,8 +271,8 @@
 		qcom,gic-map = <2 216>, /* tsens_upper_lower_int */
 			<79 379>,   /* qusb2phy_dmse_hv_prim */
 			<80 384>,   /* qusb2phy_dmse_hv_sec */
-                        <81 379>,   /* qusb2phy_dpse_hv_prim */
-                        <82 384>,   /* qusb2phy_dpse_hv_sec */
+                        /* <81 379>,   qusb2phy_dpse_hv_prim */
+                        /* <82 384>,   qusb2phy_dpse_hv_sec */
 			<52 275>,   /* qmp_usb3_lfps_rxterm_irq */
 			<87 358>,   /* ee0_krait_hlos_spmi_periph_irq */
 			<0xff 16>,  /* APCj_qgicdrCpu0HwFaultIrptReq */
@@ -524,6 +532,26 @@
 			    "heap_phys_addrbase";
 		qcom,sleep-stats-version = <2>;
 	};
+
+	rpm_msg_ram: memory@0x200000 {
+		compatible = "qcom,rpm-msg-ram";
+		reg = <0x200000 0x1000>,
+			<0x290000 0x1000>;
+	};
+
+	rpm_code_ram: rpm-memory@0x68000 {
+		compatible = "qcom,rpm-code-ram";
+		reg = <0x68000 0x5000>;
+	};
+
+	qcom,system-stats@68140 {
+		compatible = "qcom,system-stats";
+		qcom,rpm-msg-ram = <&rpm_msg_ram>;
+		qcom,rpm-code-ram = <&rpm_code_ram>;
+		qcom,masters = "APSS", "MPSS", "ADSP", "SLPI";
+	};
+
+
 
 	qcom,pm-snoc-client {
 		compatible = "qcom,pm-snoc-client";
