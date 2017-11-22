@@ -244,8 +244,9 @@ int lpm_get_latency(struct latency_level *level, uint32_t *latency)
 	struct lpm_cluster *cluster;
 	uint32_t val;
 
+	pr_info("PM: lpm_get_latency\n");
 	if (!lpm_root_node) {
-		pr_err("%s: lpm_probe not completed\n", __func__);
+		pr_err("PM: %s: lpm_probe not completed\n", __func__);
 		return -EAGAIN;
 	}
 
@@ -253,12 +254,14 @@ int lpm_get_latency(struct latency_level *level, uint32_t *latency)
 		|| (level->affinity_level > lpm_root_node->aff_level)
 		|| (level->reset_level < LPM_RESET_LVL_RET)
 		|| (level->reset_level > LPM_RESET_LVL_PC)
-		|| !latency)
+		|| !latency) {
+		pr_err("PM: %s: lpm_get_latency not completed\n", __func__);
 		return -EINVAL;
+	}
 
 	cluster = cluster_aff_match(lpm_root_node, level->affinity_level);
 	if (!cluster) {
-		pr_err("%s:No matching cluster found for affinity_level:%d\n",
+		pr_err("PM: %s:No matching cluster found for affinity_level:%d\n",
 					__func__, level->affinity_level);
 		return -EINVAL;
 	}
@@ -269,7 +272,7 @@ int lpm_get_latency(struct latency_level *level, uint32_t *latency)
 		val = least_cluster_latency(cluster, level);
 
 	if (!val) {
-		pr_err("%s:No mode with affinity_level:%d reset_level:%d\n",
+		pr_err("PM: %s:No mode with affinity_level:%d reset_level:%d\n",
 			__func__, level->affinity_level, level->reset_level);
 		return -EINVAL;
 	}
@@ -394,7 +397,7 @@ int set_l2_mode(struct low_power_ops *ops, int mode, bool notify_rpm)
 		rc = msm_spm_config_low_power_mode(ops->spm, lpm, notify_rpm);
 
 	if (rc)
-		pr_err("%s: Failed to set L2 low power mode %d, ERR %d",
+		pr_err("PM: %s: Failed to set L2 low power mode %d, ERR %d",
 				__func__, lpm, rc);
 
 	return rc;
@@ -659,7 +662,7 @@ static int cluster_configure(struct lpm_cluster *cluster, int idx,
 
 		ret = msm_rpm_enter_sleep(0, cpumask);
 		if (ret) {
-			pr_info("Failed msm_rpm_enter_sleep() rc = %d\n", ret);
+			pr_err("PM: Failed msm_rpm_enter_sleep() rc = %d\n", ret);
 			goto failed_set_mode;
 		}
 
@@ -903,8 +906,11 @@ int get_cluster_id(struct lpm_cluster *cluster, int *aff_lvl)
 		struct lpm_cluster_level *level
 			= &cluster->levels[cluster->last_level];
 
+
 		state_id |= (level->psci_id & cluster->psci_mode_mask)
 					<< cluster->psci_mode_shift;
+
+
 		(*aff_lvl)++;
 	}
 unlock_and_return:
@@ -942,10 +948,23 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 		state_id |= (power_state | affinity_level
 			| cluster->cpu->levels[idx].psci_id);
 
+		/*
+		if( affinity_level != 0 ) {
+			if( (state_id & 0xFF) == 0x44 ) {
+			    state_id = state_id & 0xFFFFFF00;
+			    state_id |= 0x34;
+			} 
+		}*/
+
+
 		update_debug_pc_event(CPU_ENTER, state_id,
 						0xdeaffeed, 0xdeaffeed, true);
 		stop_critical_timings();
+
+		//pr_err("PM: Cpususpend PSCI(1) enter suspend (%d -> %X)\n", idx, state_id);
 		success = !cpu_suspend(state_id);
+		//pr_err("PM: Cpususpend PSCI(1) exit suspend (%d)\n", success);
+
 		start_critical_timings();
 		update_debug_pc_event(CPU_EXIT, state_id,
 						success, 0xdeaffeed, true);
@@ -974,7 +993,9 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 		update_debug_pc_event(CPU_ENTER, state_id,
 						0xdeaffeed, 0xdeaffeed, true);
 		stop_critical_timings();
+
 		success = !cpu_suspend(state_id);
+
 		start_critical_timings();
 		update_debug_pc_event(CPU_EXIT, state_id,
 						success, 0xdeaffeed, true);
@@ -984,7 +1005,8 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 #else
 bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 {
-	WARN_ONCE(true, "PSCI cpu_suspend ops not supported\n");
+	pr_err("PM: PSCI cpu_suspend ops not supported\n");
+	WARN_ONCE(true, "PM: PSCI cpu_suspend ops not supported\n");
 	return false;
 }
 #endif
@@ -1084,7 +1106,7 @@ static int cpuidle_register_cpu(struct cpuidle_driver *drv,
 	drv->cpumask = mask;
 	ret = cpuidle_register_driver(drv);
 	if (ret) {
-		pr_err("Failed to register cpuidle driver %d\n", ret);
+		pr_err("PM: Failed to register cpuidle driver %d\n", ret);
 		goto failed_driver_register;
 	}
 
@@ -1094,7 +1116,7 @@ static int cpuidle_register_cpu(struct cpuidle_driver *drv,
 
 		ret = cpuidle_register_device(device);
 		if (ret) {
-			pr_err("Failed to register cpuidle driver for cpu:%u\n",
+			pr_err("PM: Failed to register cpuidle driver for cpu:%u\n",
 					cpu);
 			goto failed_driver_register;
 		}
@@ -1264,6 +1286,8 @@ static void lpm_suspend_wake(void)
 
 static int lpm_suspend_enter(suspend_state_t state)
 {
+	//int __use_psci = 0;
+
 	int cpu = raw_smp_processor_id();
 	struct lpm_cluster *cluster = per_cpu(cpu_cluster, cpu);
 	struct lpm_cpu *lpm_cpu = cluster->cpu;
@@ -1276,9 +1300,10 @@ static int lpm_suspend_enter(suspend_state_t state)
 			break;
 	}
 	if (idx < 0) {
-		pr_err("Failed suspend\n");
+		pr_err("PM: Failed suspend\n");
 		return 0;
 	}
+
 	cpu_prepare(cluster, idx, false);
 	cluster_prepare(cluster, cpumask, idx, false, 0);
 	if (idx > 0)
@@ -1293,10 +1318,12 @@ static int lpm_suspend_enter(suspend_state_t state)
 	 */
 	clock_debug_print_enabled();
 
-	if (!use_psci)
-		msm_cpu_pm_enter_sleep(cluster->cpu->levels[idx].mode, false);
-	else
+	if (!use_psci) {
+		msm_cpu_pm_enter_sleep(/*cluster->cpu->levels[idx].mode*/4, false);
+	}
+	else {
 		psci_enter_sleep(cluster, idx, true);
+	}
 
 	if (idx > 0)
 		update_debug_pc_event(CPU_EXIT, idx, true, 0xdeaffeed,
@@ -1325,7 +1352,7 @@ static void lpm_clk_init(struct platform_device *pdev)
 		snprintf(clk_name, sizeof(clk_name), "cpu%d_clk", cpu);
 		clk = clk_get(&pdev->dev, clk_name);
 		if (IS_ERR(clk)) {
-			pr_debug("%s: Could not get cpu_clk (-%ld)\n", __func__,
+			pr_err("PM: %s: Could not get cpu_clk (-%ld)\n", __func__,
 							PTR_ERR(clk));
 			clk = NULL;
 		}
@@ -1334,7 +1361,7 @@ static void lpm_clk_init(struct platform_device *pdev)
 
 	l2_clk = clk_get(&pdev->dev, "l2_clk");
 	if (IS_ERR(l2_clk)) {
-		pr_debug("%s: Could not get l2_clk (-%ld)\n", __func__,
+		pr_err("PM: %s: Could not get l2_clk (-%ld)\n", __func__,
 							PTR_ERR(l2_clk));
 		l2_clk = NULL;
 	}
@@ -1346,11 +1373,14 @@ static int lpm_probe(struct platform_device *pdev)
 	int size;
 	struct kobject *module_kobj = NULL;
 
+
+	pr_info("PM: lpm_probe\n");
+
 	get_online_cpus();
 	lpm_root_node = lpm_of_parse_cluster(pdev);
 
 	if (IS_ERR_OR_NULL(lpm_root_node)) {
-		pr_err("%s(): Failed to probe low power modes\n", __func__);
+		pr_err("PM: %s(): Failed to probe low power modes\n", __func__);
 		put_online_cpus();
 		return PTR_ERR(lpm_root_node);
 	}
@@ -1373,7 +1403,7 @@ static int lpm_probe(struct platform_device *pdev)
 
 	ret = remote_spin_lock_init(&scm_handoff_lock, SCM_HANDOFF_LOCK_ID);
 	if (ret) {
-		pr_err("%s: Failed initializing scm_handoff_lock (%d)\n",
+		pr_err("PM: %s: Failed initializing scm_handoff_lock (%d)\n",
 			__func__, ret);
 		put_online_cpus();
 		return ret;
@@ -1387,14 +1417,14 @@ static int lpm_probe(struct platform_device *pdev)
 	ret = cluster_cpuidle_register(lpm_root_node);
 	put_online_cpus();
 	if (ret) {
-		pr_err("%s()Failed to register with cpuidle framework\n",
+		pr_err("PM: %s()Failed to register with cpuidle framework\n",
 				__func__);
 		goto failed;
 	}
 	register_hotcpu_notifier(&lpm_cpu_nblk);
 	module_kobj = kset_find_obj(module_kset, KBUILD_MODNAME);
 	if (!module_kobj) {
-		pr_err("%s: cannot find kobject for module %s\n",
+		pr_err("PM: %s: cannot find kobject for module %s\n",
 			__func__, KBUILD_MODNAME);
 		ret = -ENOENT;
 		goto failed;
@@ -1402,7 +1432,7 @@ static int lpm_probe(struct platform_device *pdev)
 
 	ret = create_cluster_lvl_nodes(lpm_root_node, module_kobj);
 	if (ret) {
-		pr_err("%s(): Failed to create cluster level nodes\n",
+		pr_err("PM: %s(): Failed to create cluster level nodes\n",
 				__func__);
 		goto failed;
 	}
@@ -1431,9 +1461,10 @@ static struct platform_driver lpm_driver = {
 static int __init lpm_levels_module_init(void)
 {
 	int rc;
+	pr_info("PM: lpm_levels: Initialize\n");
 	rc = platform_driver_register(&lpm_driver);
 	if (rc) {
-		pr_info("Error registering %s\n", lpm_driver.driver.name);
+		pr_err("PM: Error registering %s\n", lpm_driver.driver.name);
 		goto fail;
 	}
 
@@ -1522,7 +1553,7 @@ void lpm_cpu_hotplug_enter(unsigned int cpu)
 				MSM_SPM_MODE_RETENTION)) {
 			mode = MSM_PM_SLEEP_MODE_RETENTION;
 		} else {
-			pr_err("No mode avail for cpu%d hotplug\n", cpu);
+			pr_err("PM: No mode avail for cpu%d hotplug\n", cpu);
 			BUG_ON(1);
 			return;
 		}
