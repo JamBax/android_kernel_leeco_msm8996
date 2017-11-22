@@ -20,67 +20,71 @@
 
 #include "power.h"
 
+static bool enable_wakelock_blocker = false;
+module_param(enable_wakelock_blocker, bool, 0664);
+
+
 static bool enable_wlan_rx_wake_ws = true;
-module_param(enable_wlan_rx_wake_ws, bool, 0644);
+module_param(enable_wlan_rx_wake_ws, bool, 0664);
 static bool enable_wlan_ctrl_wake_ws = true;
-module_param(enable_wlan_ctrl_wake_ws, bool, 0644);
+module_param(enable_wlan_ctrl_wake_ws, bool, 0664);
 static bool enable_wlan_wake_ws = true;
-module_param(enable_wlan_wake_ws, bool, 0644);
+module_param(enable_wlan_wake_ws, bool, 0664);
 static bool enable_qcom_rx_wakelock_ws = true;
-module_param(enable_qcom_rx_wakelock_ws, bool, 0644);
+module_param(enable_qcom_rx_wakelock_ws, bool, 0664);
 static bool enable_wlan_extscan_wl_ws = false;
-module_param(enable_wlan_extscan_wl_ws, bool, 0644);
+module_param(enable_wlan_extscan_wl_ws, bool, 0664);
 static bool enable_wlan_wow_wl_ws = true;
-module_param(enable_wlan_wow_wl_ws, bool, 0644);
+module_param(enable_wlan_wow_wl_ws, bool, 0664);
 static bool enable_bluedroid_timer_ws = true;
-module_param(enable_bluedroid_timer_ws, bool, 0644);
+module_param(enable_bluedroid_timer_ws, bool, 0664);
 static bool enable_ipa_ws = false;
-module_param(enable_ipa_ws, bool, 0644);
+module_param(enable_ipa_ws, bool, 0664);
 static bool enable_wlan_ws = true;
-module_param(enable_wlan_ws, bool, 0644);
+module_param(enable_wlan_ws, bool, 0664);
 static bool enable_timerfd_ws = false;
-module_param(enable_timerfd_ws, bool, 0644);
+module_param(enable_timerfd_ws, bool, 0664);
 static bool enable_netlink_ws = false;
-module_param(enable_netlink_ws, bool, 0644);
-static bool enable_netmgr_wl_ws = false;
-module_param(enable_netmgr_wl_ws, bool, 0644);
+module_param(enable_netlink_ws, bool, 0664);
+static bool enable_netmgr_wl_ws = true;
+module_param(enable_netmgr_wl_ws, bool, 0664);
 
 /*
 * SDV: Block qpnp_fg wakelocks, 5d sensor
 */
 
 static bool enable_qpnp_fg_update_sram_ws = false;
-module_param(enable_qpnp_fg_update_sram_ws, bool, 0644);
+module_param(enable_qpnp_fg_update_sram_ws, bool, 0664);
 
 static bool enable_qpnp_fg_update_temp_ws = false;
-module_param(enable_qpnp_fg_update_temp_ws, bool, 0644);
+module_param(enable_qpnp_fg_update_temp_ws, bool, 0664);
 
 static bool enable_qpnp_fg_memaccess_ws = false;
-module_param(enable_qpnp_fg_memaccess_ws, bool, 0644);
+module_param(enable_qpnp_fg_memaccess_ws, bool, 0664);
 
 static bool enable_sensors_qcom_ws = false;
-module_param(enable_sensors_qcom_ws, bool, 0644);
+module_param(enable_sensors_qcom_ws, bool, 0664);
 
 static bool enable_qbt_ws = true;
-module_param(enable_qbt_ws, bool, 0644);
+module_param(enable_qbt_ws, bool, 0664);
 
 static bool enable_rc0_pcie_ws = true;
-module_param(enable_rc0_pcie_ws, bool, 0644);
+module_param(enable_rc0_pcie_ws, bool, 0664);
 
 static bool enable_rc1_pcie_ws = true;
-module_param(enable_rc1_pcie_ws, bool, 0644);
+module_param(enable_rc1_pcie_ws, bool, 0664);
 
 static bool enable_dsps_IPCRTR_ws = true;
-module_param(enable_dsps_IPCRTR_ws, bool, 0644);
+module_param(enable_dsps_IPCRTR_ws, bool, 0664);
 
 static bool enable_FLP_srv_ws = false;
-module_param(enable_FLP_srv_ws, bool, 0644);
+module_param(enable_FLP_srv_ws, bool, 0664);
 
 static bool enable_battery_ws = false;
-module_param(enable_battery_ws, bool, 0644);
+module_param(enable_battery_ws, bool, 0664);
 
 static bool enable_usb_ws = false;
-module_param(enable_usb_ws, bool, 0644);
+module_param(enable_usb_ws, bool, 0664);
 
 /*
  * If set, the suspend/hibernate code will abort transitions to a sleep state
@@ -516,7 +520,15 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 
 	unsigned int wslen = 0;
 
+		if( !enable_wakelock_blocker )  {
+			//pr_err("wl blocker disabled %s\n", ws->name);
+			return false;
+		} 
+
+
 	if (ws) {
+
+
 		wslen = strlen(ws->name);
 
 		if ((!enable_ipa_ws && !strncmp(ws->name, "IPA_WS", wslen)) ||
@@ -612,8 +624,10 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
  * core of the event by incrementing the counter of of wakeup events being
  * processed.
  */
+
 static void wakeup_source_activate(struct wakeup_source *ws)
 {
+
 	unsigned int cec;
 
 	/*
