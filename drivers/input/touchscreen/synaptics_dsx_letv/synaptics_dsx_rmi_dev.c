@@ -593,9 +593,15 @@ static int rmidev_open(struct inode *inp, struct file *filp)
 
 	mutex_lock(&(dev_data->file_mutex));
 
+/*
 	rmi4_data->irq_enable(rmi4_data, false, false);
 	dev_dbg(rmi4_data->pdev->dev.parent,
 			"%s: Attention interrupt disabled\n",
+			__func__);
+*/
+	rmi4_data->irq_enable(rmi4_data, true, false);
+	dev_err(rmi4_data->pdev->dev.parent,
+			"%s: Attention interrupt enabled\n",
 			__func__);
 
 	if (dev_data->ref_count < 1)

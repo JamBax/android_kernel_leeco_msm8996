@@ -391,6 +391,7 @@ struct synaptics_rmi4_data {
 	bool report_pressure;
 	bool stylus_enable;
 	bool eraser_enable;
+	bool finger_present;
 	int (*reset_device)(struct synaptics_rmi4_data *rmi4_data,
 			bool rebuild);
 #ifdef ESD_CHECK_SUPPORT
