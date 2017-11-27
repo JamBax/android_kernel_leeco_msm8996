@@ -73,7 +73,7 @@ struct msm_pinctrl {
 };
 
 static bool skip(const char* p_name){
-#ifdef CONFIG_PRODUCT_LE_ZL1
+//#ifdef CONFIG_PRODUCT_LE_ZL1
 	char skip_string[16][8] = {"gpio0", "gpio1", "gpio2", "gpio3", "gpio81", "gpio82" , "gpio83", "gpio84", "gpio130", "gpio131"};
 	int i = 0;
 	if(NULL != p_name){
@@ -84,7 +84,7 @@ static bool skip(const char* p_name){
 			i++;
 		}
 	}
-#endif
+//#endif
 	return false;
 }
 
@@ -1027,7 +1027,7 @@ static void msm_pinctrl_resume(void)
 			else if (desc->action && desc->action->name)
 				name = desc->action->name;
 
-			pr_warn("%s: %d triggered %s\n", __func__, irq, name);
+			pr_warn("%s: %d (%d) triggered %s\n", __func__, irq, i, name);
 		}
 	}
 	spin_unlock_irqrestore(&pctrl->lock, flags);
