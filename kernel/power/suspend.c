@@ -73,7 +73,7 @@ static void freeze_enter(void)
 	/* Make the current CPU wait so it can enter the idle loop too. */
 	wait_event(suspend_freeze_wait_head,
 		   suspend_freeze_state == FREEZE_STATE_WAKE);
-	pr_err("PM: resume from suspend-to-idle\n");
+	pr_debug("PM: resume from suspend-to-idle\n");
 
 	cpuidle_pause();
 	put_online_cpus();
@@ -133,6 +133,8 @@ void suspend_set_ops(const struct platform_suspend_ops *ops)
 {
 	suspend_state_t i;
 	int j = 0;
+
+	dump_stack();
 
 	lock_system_sleep();
 
@@ -306,8 +308,10 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 	int error, last_dev;
 
 	error = platform_suspend_prepare(state);
-	if (error)
+	if (error) {
+		pr_err("PM: platform suspend prepare error %d\n", error);
 		goto Platform_finish;
+	}
 
 	error = dpm_suspend_late(PMSG_SUSPEND);
 	if (error) {
@@ -319,8 +323,10 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 		goto Platform_finish;
 	}
 	error = platform_suspend_prepare_late(state);
-	if (error)
+	if (error) {
+		pr_err("PM: platform suspend prepare_late error %d\n", error);
 		goto Devices_early_resume;
+	}
 
 	error = dpm_suspend_noirq(PMSG_SUSPEND);
 	if (error) {
@@ -362,21 +368,36 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)
 
 	error = syscore_suspend();
 	if (!error) {
-		*wakeup = pm_wakeup_pending();
-		if (!(suspend_test(TEST_CORE) || *wakeup)) {
-			trace_suspend_resume(TPS("machine_suspend"),
-				state, true);
-			error = suspend_ops->enter(state);
-			trace_suspend_resume(TPS("machine_suspend"),
-				state, false);
-			events_check_enabled = false;
-		} else if (*wakeup) {
-			pm_get_active_wakeup_sources(suspend_abort,
-				MAX_SUSPEND_ABORT_LEN);
-			log_suspend_abort_reason(suspend_abort);
-			error = -EBUSY;
-		}
+		*wakeup = NULL;
+		//while( !(error || *wakeup) ) {
+			*wakeup = pm_wakeup_pending();
+			error = suspend_test(TEST_CORE);
+			if( error ) {
+				pr_err("PM: suspend test core error %d\n", error);
+			}
+			if (!(error || *wakeup)) {
+				trace_suspend_resume(TPS("machine_suspend"),
+					state, true);
+				error = suspend_ops->enter(state);
+				trace_suspend_resume(TPS("machine_suspend"),
+					state, false);
+				events_check_enabled = false;
+			} else if (*wakeup) {
+				pm_get_active_wakeup_sources(suspend_abort,
+					MAX_SUSPEND_ABORT_LEN);
+				log_suspend_abort_reason(suspend_abort);
+				error = -EBUSY;
+			}
+			if( error ) {
+				pr_err("PM: suspend enter error %d\n", error);
+			}
+			if(!(error || *wakeup) ) {
+				pr_err("PM: wake reason unknown\n");
+			}
+		//}
 		syscore_resume();
+	} else {
+		pr_err("PM: syscore suspend error %d\n", error);
 	}
 
 	arch_suspend_enable_irqs();
@@ -430,6 +451,12 @@ int suspend_devices_and_enter(suspend_state_t state)
 
 	do {
 		error = suspend_enter(state, &wakeup);
+		if( error ) {
+			pr_err("PM: suspend_enter failed %d\n",error);
+		}
+		if( wakeup ) {
+			pr_err("PM: suspend_enter wakeup received\n");
+		}
 	} while (!error && !wakeup && platform_suspend_again(state));
 
  Resume_devices:
@@ -495,16 +522,25 @@ static int enter_state(suspend_state_t state)
 	trace_suspend_resume(TPS("sync_filesystems"), 0, true);
 	printk(KERN_INFO "PM: Syncing filesystems ... ");
 	sys_sync();
-	printk("done.\n");
+	//printk("done.\n");
 	trace_suspend_resume(TPS("sync_filesystems"), 0, false);
+
+	pr_err("PM: Pausing cpuidle\n");
+	//trace_suspend_resume(TPS("cpuidle_pause"), 0, false);
+	cpuidle_pause();
+
 
 	pr_err("PM: Preparing system for %s sleep\n", pm_states[state]);
 	error = suspend_prepare(state);
-	if (error)
+	if (error) {
+		pr_err("PM: error preparing for sleep %d.\n", error);
 		goto Unlock;
+	}
 
-	if (suspend_test(TEST_FREEZER))
+	if (suspend_test(TEST_FREEZER)) {
+		pr_err("PM: error test for sleep.\n");
 		goto Finish;
+	}
 
 	trace_suspend_resume(TPS("suspend_enter"), state, false);
 	pr_err("PM: Entering %s sleep\n", pm_states[state]);
@@ -513,8 +549,11 @@ static int enter_state(suspend_state_t state)
 	pm_restore_gfp_mask();
 
  Finish:
+	pr_err("PM: Resuming cpuidle\n");
+	cpuidle_resume();
 	pr_err("PM: Finishing wakeup.\n");
 	suspend_finish();
+	
  Unlock:
 	mutex_unlock(&pm_mutex);
 	return error;
