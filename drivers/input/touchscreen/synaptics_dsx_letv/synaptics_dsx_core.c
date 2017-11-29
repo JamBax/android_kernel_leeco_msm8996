@@ -828,6 +828,7 @@ static ssize_t synaptics_rmi4_wake_gesture_store(struct device *dev,
 {
 	unsigned int input;
 	struct synaptics_rmi4_data *rmi4_data = dev_get_drvdata(dev);
+	int old_enable_wakeup_gesture = rmi4_data->enable_wakeup_gesture;
 
 	if (sscanf(buf, "%u", &input) != 1)
 		return -EINVAL;
@@ -836,6 +837,16 @@ static ssize_t synaptics_rmi4_wake_gesture_store(struct device *dev,
 
 	if (rmi4_data->f11_wakeup_gesture || rmi4_data->f12_wakeup_gesture)
 		rmi4_data->enable_wakeup_gesture = input;
+
+	if( rmi4_data->enable_wakeup_gesture != old_enable_wakeup_gesture ) {
+		if( rmi4_data->enable_wakeup_gesture ) {
+			pr_err("%s: enable_irq\n", __func__);
+			enable_irq(rmi4_data->irq);
+		} else {
+			pr_err("%s: disable_irq\n", __func__);
+			disable_irq(rmi4_data->irq);
+		}
+	}
 
 	return count;
 }
@@ -1789,14 +1800,18 @@ static irqreturn_t synaptics_rmi4_irq(int irq, void *data)
 		goto exit;
 	}
 
+
 	rmi4_data->timestamp = ktime_get();
 	//pm_stay_awake(&(rmi4_data->pdev->dev));
 	pm_wakeup_event(&(rmi4_data->pdev->dev),30000);
+	pr_err("synaptics irq wakeup\n");
 
 	synaptics_rmi4_sensor_report(rmi4_data, true);
 
 	if( !rmi4_data->finger_present ) {
+		pr_err("synaptics irq relaxed\n");
 		pm_relax(&(rmi4_data->pdev->dev));
+		pm_wakeup_event(&(rmi4_data->pdev->dev),200);
 	}
 
 	rmi4_data->timestamp = ktime_get();
@@ -1886,6 +1901,7 @@ static int synaptics_rmi4_irq_enable(struct synaptics_rmi4_data *rmi4_data,
 		rmi4_data->irq_enabled = true;
 	} else {
 		if (rmi4_data->irq_enabled) {
+			pr_err("%s: disable_irq\n", __func__);
 			disable_irq(rmi4_data->irq);
 			free_irq(rmi4_data->irq, rmi4_data);
 			rmi4_data->irq_enabled = false;
@@ -3966,10 +3982,14 @@ static int synaptics_rmi4_reinit_device(struct synaptics_rmi4_data *rmi4_data)
 
 	
 	if (rmi4_data->enable_wakeup_gesture) {
-		//synaptics_rmi4_irq_enable(rmi4_data, true, false);
+		synaptics_rmi4_irq_enable(rmi4_data, true, true);
 		//synaptics_rmi4_wakeup_gesture(rmi4_data, true);
-		pr_err("synaptics enable irq\n");
+		pr_err("%s: enable_irq\n", __func__);
 		enable_irq_wake(rmi4_data->irq);
+		pr_err("synaptics enable_wakeup_gesture reinit\n");
+	} else {
+		pr_err("%s: disable_irq\n", __func__);
+		disable_irq_wake(rmi4_data->irq);
 		pr_err("synaptics enable_wakeup_gesture reinit\n");
 	}
 
@@ -4929,10 +4949,13 @@ static void synaptics_rmi4_early_suspend(struct early_suspend *h)
 	if (rmi4_data->enable_wakeup_gesture) {
 		synaptics_rmi4_wakeup_gesture(rmi4_data, true);
 		pr_err("synaptics enable irq for wake qesture early suspend\n");
+		pr_err("%s: enable_irq\n", __func__);
 		enable_irq_wake(rmi4_data->irq);
 		goto exit;
 	}
 
+	pr_err("%s: disable_irq\n", __func__);
+	disable_irq_wake(rmi4_data->irq);
 
 	pr_err("%s:%d  early suspend \n",__func__,__LINE__);
 	synaptics_rmi4_irq_enable(rmi4_data, false, false);
@@ -5022,7 +5045,7 @@ static int synaptics_rmi4_suspend(struct device *dev)
 #endif
 	if (rmi4_data->enable_wakeup_gesture) {
 		synaptics_rmi4_wakeup_gesture(rmi4_data, true);
-		pr_err("synaptics enable irq\n");
+		pr_err("%s: enable_irq\n", __func__);
 		enable_irq_wake(rmi4_data->irq);
 		pr_err("synaptics enable_wakeup_gesture skip suspend\n");
 		goto exit;
@@ -5031,6 +5054,8 @@ static int synaptics_rmi4_suspend(struct device *dev)
 	pr_err("synaptics - suspend\n");
 
 	if (!rmi4_data->suspend) {
+		pr_err("%s: disable_irq\n", __func__);
+		disable_irq_wake(rmi4_data->irq);
 		synaptics_rmi4_irq_enable(rmi4_data, false, false);
 		synaptics_rmi4_sleep_enable(rmi4_data, true);
 		if(rmi4_data->input_dev){
@@ -5093,8 +5118,8 @@ static int synaptics_rmi4_resume(struct device *dev)
 	}
 	if (rmi4_data->enable_wakeup_gesture) {
 		//synaptics_rmi4_wakeup_gesture(rmi4_data, false);
-		pr_err("synaptics disable irq\n");
 		//disable_irq_wake(rmi4_data->irq);
+		pr_err("%s: enable_irq\n", __func__);
 		enable_irq_wake(rmi4_data->irq);
 		if( !rmi4_data->suspend ) {
 			pr_err("synaptics enable_wakeup_gesture skip resume\n");
