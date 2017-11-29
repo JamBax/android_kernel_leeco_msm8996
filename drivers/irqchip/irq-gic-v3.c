@@ -25,6 +25,7 @@
 #include <linux/percpu.h>
 #include <linux/slab.h>
 #include <linux/module.h>
+#include <linux/wakeup_reason.h>
 
 #include <linux/irqchip/arm-gic-v3.h>
 #include <linux/syscore_ops.h>
@@ -384,6 +385,8 @@ static void gic_show_resume_irq(struct gic_chip_data *gic)
 			name = "stray irq";
 		else if (desc->action && desc->action->name)
 			name = desc->action->name;
+
+		log_wakeup_reason(irq);
 
 		pr_warn("%s_v3: %d (%d) triggered %s\n", __func__, irq, i, name);
 	}
@@ -751,7 +754,19 @@ int gic_set_wake(struct irq_data *d, unsigned int on)
 	bit_offset = gicirq % 32;
 
 	pr_err("mpm: gic_set_wake %d -> %d\n",gicirq, on);
-	if( gicirq == 200 || gicirq == 240 /*|| gicirq == 203 || gicirq == 481 || gicirq == 365 */) {
+	if( 	gicirq == 200 || 
+		gicirq == 240 ||
+		gicirq == 0 || 
+		gicirq == 1 || 
+		gicirq == 2 || 
+		gicirq == 3 || 
+		gicirq == 81 || 
+		gicirq == 82 || 
+		gicirq == 83 || 
+		gicirq == 84 || 
+		gicirq == 130 || 
+		gicirq == 131
+		/*|| gicirq == 481 || gicirq == 365 */ ) {
 	    on = 0;
 	    pr_err("mpm: gic_set_wake %d -> %d\n",gicirq, on);
 	}
