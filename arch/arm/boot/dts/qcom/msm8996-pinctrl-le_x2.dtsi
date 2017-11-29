@@ -587,9 +587,9 @@
 
                     config {
                         pins = "gpio125";
-                        bias-pull-up; /* PULL UP */
-                        drive-strength = <16>; /* 16 MA */
-    //                  input-low;
+                       // bias-pull-up; /* PULL UP */
+                        drive-strength = <2>; /* 16 MA */
+                      //input-low;
                     };
                 };
 
@@ -602,9 +602,9 @@
                     config {
                         pins = "gpio125";
                         bias-disable; /* No PULL */
-    //                  bias-pull-down;
+                         //bias-pull-down;
                         drive-strength = <2>; /* 2 MA */
-    //                  input-high;
+                        // input-high;
                     };
                 };
             };
@@ -618,7 +618,7 @@
                     config {
                         pins = "gpio89";
                         bias-pull-up;
-                        drive-strength = <16>; /* 16 MA */
+                        drive-strength = <1>; /* 16 MA */
                         output-low;
                     };
                 };
@@ -629,8 +629,8 @@
                     };
                     config {
                         pins = "gpio89";
-                        bias-disable; /* NO PULL  */
-    //                  bias-pull-down;
+                        //bias-disable; /* NO PULL  */
+                      	bias-pull-down;
                         drive-strength = <2>; /* 2 MA */
                         output-high;
                     };
