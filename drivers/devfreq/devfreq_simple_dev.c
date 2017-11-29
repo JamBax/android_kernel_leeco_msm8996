@@ -148,7 +148,7 @@ static int devfreq_clock_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	p->polling_ms = 50;
+	p->polling_ms = 100;
 	if (!of_property_read_u32(dev->of_node, "polling-ms", &poll))
 		p->polling_ms = poll;
 
