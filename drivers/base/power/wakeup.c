@@ -46,7 +46,7 @@ static bool enable_timerfd_ws = false;
 module_param(enable_timerfd_ws, bool, 0664);
 static bool enable_netlink_ws = false;
 module_param(enable_netlink_ws, bool, 0664);
-static bool enable_netmgr_wl_ws = true;
+static bool enable_netmgr_wl_ws = false;
 module_param(enable_netmgr_wl_ws, bool, 0664);
 
 /*
