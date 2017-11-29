@@ -244,7 +244,7 @@ int lpm_get_latency(struct latency_level *level, uint32_t *latency)
 	struct lpm_cluster *cluster;
 	uint32_t val;
 
-	pr_info("PM: lpm_get_latency\n");
+	//pr_info("PM: lpm_get_latency\n");
 	if (!lpm_root_node) {
 		pr_err("PM: %s: lpm_probe not completed\n", __func__);
 		return -EAGAIN;
@@ -926,11 +926,14 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 	 * idx = 0 is the default LPM state
 	 */
 	if (!idx) {
+		//pr_err("PM: WFI suspend\n");
 		stop_critical_timings();
 		wfi();
 		start_critical_timings();
+		//pr_err("PM: WFI resume\n");
 		return 1;
 	} else {
+		int error = 0;
 		int affinity_level = 0;
 		int state_id = get_cluster_id(cluster, &affinity_level);
 		int power_state =
@@ -938,9 +941,11 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 		bool success = false;
 
 		if (cluster->cpu->levels[idx].hyp_psci) {
+			//pr_err("PM: HYP_PSCI suspend\n");
 			stop_critical_timings();
 			__invoke_psci_fn_smc(0xC4000021, 0, 0, 0);
 			start_critical_timings();
+			//pr_err("PM: HYP_PSCI resume\n");
 			return 1;
 		}
 
@@ -948,21 +953,16 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 		state_id |= (power_state | affinity_level
 			| cluster->cpu->levels[idx].psci_id);
 
-		/*
-		if( affinity_level != 0 ) {
-			if( (state_id & 0xFF) == 0x44 ) {
-			    state_id = state_id & 0xFFFFFF00;
-			    state_id |= 0x34;
-			} 
-		}*/
-
 
 		update_debug_pc_event(CPU_ENTER, state_id,
 						0xdeaffeed, 0xdeaffeed, true);
 		stop_critical_timings();
 
 		//pr_err("PM: Cpususpend PSCI(1) enter suspend (%d -> %X)\n", idx, state_id);
-		success = !cpu_suspend(state_id);
+		//pr_err("PM: PSCI suspend 0x%X\n", state_id);
+		error = cpu_suspend(state_id);
+		//pr_err("PM: PSCI resume (%d)\n", error);
+		success = !error;
 		//pr_err("PM: Cpususpend PSCI(1) exit suspend (%d)\n", success);
 
 		start_critical_timings();
@@ -972,19 +972,34 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 	}
 }
 #elif defined(CONFIG_ARM_PSCI)
+asmlinkage int __invoke_psci_fn_smc(u64, u64, u64, u64);
 bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 {
 	if (!idx) {
+		//pr_err("PM: WFI suspend\n");
 		stop_critical_timings();
 		wfi();
 		start_critical_timings();
+		//pr_err("PM: WFI resume\n");
 		return 1;
 	} else {
+
+		int error = 0;
 		int affinity_level = 0;
 		int state_id = get_cluster_id(cluster, &affinity_level);
 		int power_state =
 			PSCI_POWER_STATE(cluster->cpu->levels[idx].is_reset);
 		bool success = false;
+
+		if (cluster->cpu->levels[idx].hyp_psci) {
+			//pr_err("PM: HYP_PSCI suspend\n");
+			stop_critical_timings();
+			__invoke_psci_fn_smc(0xC4000021, 0, 0, 0);
+			start_critical_timings();
+			//pr_err("PM: HYP_PSCI resume\n");
+			return 1;
+		}
+
 
 		affinity_level = PSCI_AFFINITY_LEVEL(affinity_level);
 		state_id |= (power_state | affinity_level
@@ -994,7 +1009,10 @@ bool psci_enter_sleep(struct lpm_cluster *cluster, int idx, bool from_idle)
 						0xdeaffeed, 0xdeaffeed, true);
 		stop_critical_timings();
 
-		success = !cpu_suspend(state_id);
+		//pr_err("PM: PSCI suspend 0x%X\n", state_id);
+		error = cpu_suspend(state_id);
+		//pr_err("PM: PSCI resume (%d)\n", error);
+		success = !error;
 
 		start_critical_timings();
 		update_debug_pc_event(CPU_EXIT, state_id,
@@ -1287,7 +1305,7 @@ static void lpm_suspend_wake(void)
 static int lpm_suspend_enter(suspend_state_t state)
 {
 	//int __use_psci = 0;
-
+	bool success = false;
 	int cpu = raw_smp_processor_id();
 	struct lpm_cluster *cluster = per_cpu(cpu_cluster, cpu);
 	struct lpm_cpu *lpm_cpu = cluster->cpu;
@@ -1301,9 +1319,11 @@ static int lpm_suspend_enter(suspend_state_t state)
 	}
 	if (idx < 0) {
 		pr_err("PM: Failed suspend\n");
-		return 0;
+		return -1;
 	}
 
+	
+	//pr_err("PM: PSCI suspend %d\n", idx);
 	cpu_prepare(cluster, idx, false);
 	cluster_prepare(cluster, cpumask, idx, false, 0);
 	if (idx > 0)
@@ -1319,10 +1339,10 @@ static int lpm_suspend_enter(suspend_state_t state)
 	clock_debug_print_enabled();
 
 	if (!use_psci) {
-		msm_cpu_pm_enter_sleep(/*cluster->cpu->levels[idx].mode*/4, false);
+		success = msm_cpu_pm_enter_sleep(cluster->cpu->levels[idx].mode, false);
 	}
 	else {
-		psci_enter_sleep(cluster, idx, true);
+		success = psci_enter_sleep(cluster, idx, true);
 	}
 
 	if (idx > 0)
@@ -1331,7 +1351,7 @@ static int lpm_suspend_enter(suspend_state_t state)
 
 	cluster_unprepare(cluster, cpumask, idx, false, 0);
 	cpu_unprepare(cluster, idx, false);
-	return 0;
+	return !success;
 }
 
 static const struct platform_suspend_ops lpm_suspend_ops = {
@@ -1374,7 +1394,7 @@ static int lpm_probe(struct platform_device *pdev)
 	struct kobject *module_kobj = NULL;
 
 
-	pr_info("PM: lpm_probe\n");
+	//pr_info("PM: lpm_probe\n");
 
 	get_online_cpus();
 	lpm_root_node = lpm_of_parse_cluster(pdev);
