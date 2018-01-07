@@ -97,7 +97,7 @@
 /*
  * The preempt_count offset after spin_lock()
  */
-#define PREEMPT_LOCK_OFFSET	PREEMPT_DISABLE_OFFSET
+#define PREEMPT_LOCK_OFFSET PREEMPT_DISABLE_OFFSET
 
 /*
  * The preempt_count offset needed for things like:
@@ -112,7 +112,7 @@
  *
  * Work as expected.
  */
-#define SOFTIRQ_LOCK_OFFSET (SOFTIRQ_DISABLE_OFFSET + PREEMPT_LOCK_OFFSET)
+#define SOFTIRQ_LOCK_OFFSET (SOFTIRQ_DISABLE_OFFSET + PREEMPT_DISABLE_OFFSET)
 
 /*
  * Are we running in atomic context?  WARNING: this macro cannot

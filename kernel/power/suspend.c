@@ -549,12 +549,12 @@ static int enter_state(suspend_state_t state)
 	pm_restore_gfp_mask();
 
  Finish:
-	pr_err("PM: Resuming cpuidle\n");
-	cpuidle_resume();
 	pr_err("PM: Finishing wakeup.\n");
 	suspend_finish();
 	
  Unlock:
+	pr_err("PM: Resuming cpuidle\n");
+	cpuidle_resume();
 	mutex_unlock(&pm_mutex);
 	return error;
 }

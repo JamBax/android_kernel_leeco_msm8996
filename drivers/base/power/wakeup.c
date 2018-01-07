@@ -23,6 +23,25 @@
 static bool enable_wakelock_blocker = false;
 module_param(enable_wakelock_blocker, bool, 0664);
 
+static bool enable_wlan_wow_wl_ws = true;
+module_param(enable_wlan_wow_wl_ws, bool, 0664);
+static bool enable_qbt_ws = true;
+module_param(enable_qbt_ws, bool, 0664);
+static bool enable_wlan_ws = false;
+module_param(enable_wlan_ws, bool, 0664);
+
+
+static bool enable_rc0_pcie_ws = true;
+module_param(enable_rc0_pcie_ws, bool, 0664);
+
+static bool enable_rc1_pcie_ws = false;
+module_param(enable_rc1_pcie_ws, bool, 0664);
+
+static bool enable_dsps_IPCRTR_ws = true;
+module_param(enable_dsps_IPCRTR_ws, bool, 0664);
+
+static bool enable_qcom_rx_wakelock_ws = true;
+module_param(enable_qcom_rx_wakelock_ws, bool, 0664);
 
 static bool enable_wlan_rx_wake_ws = true;
 module_param(enable_wlan_rx_wake_ws, bool, 0664);
@@ -30,24 +49,21 @@ static bool enable_wlan_ctrl_wake_ws = true;
 module_param(enable_wlan_ctrl_wake_ws, bool, 0664);
 static bool enable_wlan_wake_ws = true;
 module_param(enable_wlan_wake_ws, bool, 0664);
-static bool enable_qcom_rx_wakelock_ws = true;
-module_param(enable_qcom_rx_wakelock_ws, bool, 0664);
-static bool enable_wlan_extscan_wl_ws = false;
+static bool enable_wlan_extscan_wl_ws = true;
 module_param(enable_wlan_extscan_wl_ws, bool, 0664);
-static bool enable_wlan_wow_wl_ws = true;
-module_param(enable_wlan_wow_wl_ws, bool, 0664);
-static bool enable_bluedroid_timer_ws = true;
+
+static bool enable_bluedroid_timer_ws = false;
 module_param(enable_bluedroid_timer_ws, bool, 0664);
 static bool enable_ipa_ws = false;
 module_param(enable_ipa_ws, bool, 0664);
-static bool enable_wlan_ws = true;
-module_param(enable_wlan_ws, bool, 0664);
-static bool enable_timerfd_ws = false;
-module_param(enable_timerfd_ws, bool, 0664);
+
 static bool enable_netlink_ws = false;
 module_param(enable_netlink_ws, bool, 0664);
 static bool enable_netmgr_wl_ws = false;
 module_param(enable_netmgr_wl_ws, bool, 0664);
+
+static bool enable_timerfd_ws = false;
+module_param(enable_timerfd_ws, bool, 0664);
 
 /*
 * SDV: Block qpnp_fg wakelocks, 5d sensor
@@ -64,18 +80,6 @@ module_param(enable_qpnp_fg_memaccess_ws, bool, 0664);
 
 static bool enable_sensors_qcom_ws = false;
 module_param(enable_sensors_qcom_ws, bool, 0664);
-
-static bool enable_qbt_ws = true;
-module_param(enable_qbt_ws, bool, 0664);
-
-static bool enable_rc0_pcie_ws = true;
-module_param(enable_rc0_pcie_ws, bool, 0664);
-
-static bool enable_rc1_pcie_ws = true;
-module_param(enable_rc1_pcie_ws, bool, 0664);
-
-static bool enable_dsps_IPCRTR_ws = true;
-module_param(enable_dsps_IPCRTR_ws, bool, 0664);
 
 static bool enable_FLP_srv_ws = false;
 module_param(enable_FLP_srv_ws, bool, 0664);
@@ -578,9 +582,10 @@ static bool wakeup_source_blocker(struct wakeup_source *ws)
 				!strncmp(ws->name, "wlan_ctrl_wake", wslen))) {
 			if (ws->active) {
 				wakeup_source_deactivate(ws);
-				pr_info("forcefully deactivate wakeup source: %s\n",
+				pr_err("WL: forcefully deactivate wakeup source: %s\n",
 					ws->name);
 			}
+			//pr_err("WL: blocked ws=%s\n",ws->name);
 			return true;
 		}
 	}

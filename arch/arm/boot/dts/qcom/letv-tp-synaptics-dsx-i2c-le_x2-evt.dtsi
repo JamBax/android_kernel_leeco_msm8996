@@ -46,12 +46,12 @@
 			vcc_i2c-supply = <&pm8994_l14>;
 			synaptics,pwr-reg-name = "vdd_ana";
 			synaptics,bus-reg-name = "vcc_i2c";
-			synaptics,reset-gpio = <&tlmm 89 0x00>;
+			synaptics,reset-gpio = <&tlmm 124 0x00>;
 			synaptics,irq-gpio = <&tlmm 125 0xf>;
 			synaptics,irq-on-state = <1>;
 			synaptics,irq-flags = <0xf>;  /*IRQF_ONESHOT | IRQF_TRIGGER_LOW */
-			synaptics,power-delay-ms = <20>;
-			synaptics,reset-delay-ms = <20>;
+			synaptics,power-delay-ms = <100>;
+			synaptics,reset-delay-ms = <100>;
 			synaptics,reset-on-state = <0>;
 			synaptics,reset-active-ms = <20>;
 			/*synaptics,disable-gpios;*/

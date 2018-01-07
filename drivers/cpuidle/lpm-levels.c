@@ -1338,12 +1338,16 @@ static int lpm_suspend_enter(suspend_state_t state)
 	 */
 	clock_debug_print_enabled();
 
+	//cpuidle_pause();
+
 	if (!use_psci) {
 		success = msm_cpu_pm_enter_sleep(cluster->cpu->levels[idx].mode, false);
 	}
 	else {
 		success = psci_enter_sleep(cluster, idx, true);
 	}
+
+	//cpuidle_resume();
 
 	if (idx > 0)
 		update_debug_pc_event(CPU_EXIT, idx, true, 0xdeaffeed,

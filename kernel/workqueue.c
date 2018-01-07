@@ -4048,6 +4048,8 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	struct workqueue_struct *wq;
 	struct pool_workqueue *pwq;
 
+	//flags |= WQ_POWER_EFFICIENT;
+
 	/* see the comment above the definition of WQ_POWER_EFFICIENT */
 	if ((flags & WQ_POWER_EFFICIENT) && wq_power_efficient)
 		flags |= WQ_UNBOUND;
@@ -4069,6 +4071,13 @@ struct workqueue_struct *__alloc_workqueue_key(const char *fmt,
 	va_start(args, lock_name);
 	vsnprintf(wq->name, sizeof(wq->name), fmt, args);
 	va_end(args);
+
+	if( flags & WQ_POWER_EFFICIENT ) pr_err("WQ: %s -> power_effeicient\n", wq->name);
+	if( flags & WQ_UNBOUND ) pr_err("WQ: %s -> workqueue_unbound\n", wq->name);
+	else { 
+		pr_err("WQ: %s -> workqueue_bound\n", wq->name); 
+		dump_stack();
+	}
 
 	max_active = max_active ?: WQ_DFL_ACTIVE;
 	max_active = wq_clamp_max_active(max_active, flags, wq->name);

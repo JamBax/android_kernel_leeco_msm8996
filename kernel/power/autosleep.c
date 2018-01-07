@@ -61,8 +61,8 @@ static void try_to_suspend(struct work_struct *work)
 	 */
 	if (final_count == initial_count) {
 		pr_err("PM: Unknown wakeup reason. Sleeping uninterruptable.\n");
-		//schedule_timeout_uninterruptible(HZ / 2);
-		schedule_timeout_uninterruptible(msecs_to_jiffies(1000) + 1);
+		schedule_timeout_uninterruptible(HZ / 2);
+		//schedule_timeout_uninterruptible(msecs_to_jiffies(1000) + 1);
 	}
 
  out:

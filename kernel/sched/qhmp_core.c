@@ -5885,7 +5885,7 @@ out_unlock:
 	return retval;
 }
 
-long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
+long sched_setaffinity(pid_t pid, struct cpumask *in_mask)
 {
 	cpumask_var_t cpus_allowed, new_mask;
 	struct task_struct *p;
@@ -6266,6 +6266,7 @@ EXPORT_SYMBOL_GPL(yield_to);
  * This task is about to go to sleep on IO. Increment rq->nr_iowait so
  * that process accounting knows that this is a task in IO wait state.
  */
+/*
 void __sched io_schedule(void)
 {
 	struct rq *rq = raw_rq();
@@ -6280,6 +6281,7 @@ void __sched io_schedule(void)
 	delayacct_blkio_end();
 }
 EXPORT_SYMBOL(io_schedule);
+*/
 
 long __sched io_schedule_timeout(long timeout)
 {
