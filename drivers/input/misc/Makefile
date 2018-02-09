@@ -73,3 +73,4 @@ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_INPUT_IDEAPAD_SLIDEBAR)	+= ideapad_slidebar.o
 obj-y                    		+= vl53L0/
 obj-y                    		+= nxu8010_driver.o
+obj-$(CONFIG_SENSORS_HALL)	+= hall_switch.o
