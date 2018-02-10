@@ -18,7 +18,7 @@
 
 
 static volatile int key_debug = 5;
-#define HALL_GPIO 124
+#define HALL_GPIO 36
 
 #define SSC_VDD_2P85_HPM_LOAD 600000 //uA
 
